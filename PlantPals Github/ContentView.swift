@@ -10,7 +10,7 @@
 //    Load fertilizer list
 //    Load Table 7-1 info
 //    Make/display graphics
-// hello
+// hello yodeler
 import SwiftUI
 class PileOfRubbish: ObservableObject {
    
