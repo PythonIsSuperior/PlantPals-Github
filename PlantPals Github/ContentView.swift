@@ -13,6 +13,7 @@
 // hello yodeler
 // I like bananas
 // I like oranges
+// I like both
 
 import SwiftUI
 class PileOfRubbish: ObservableObject {
