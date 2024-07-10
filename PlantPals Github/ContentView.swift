@@ -11,6 +11,8 @@
 //    Load Table 7-1 info
 //    Make/display graphics
 // hello yodeler
+// I like bananas
+
 import SwiftUI
 class PileOfRubbish: ObservableObject {
    
