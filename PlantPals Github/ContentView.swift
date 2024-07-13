@@ -11,8 +11,6 @@
 //    Load Table 7-1 info
 //    Make/display graphics
 // hello yodeler
-// I like bananas
-// I like oranges
 
 import SwiftUI
 class PileOfRubbish: ObservableObject {
@@ -246,54 +244,103 @@ struct SOIL_TEST: View {
     var body: some View {
         VStack {
             Text("Input Soil Test Results").bold()
-           
             Spacer()
             Text("pH = \(tinyPile.pH, specifier: "%.2f")")
-            Slider(value: $tinyPile.pH,
-                   in:   4...7.35,
-                   step: 0.05
-            )
+            HStack{
+                Spacer(minLength:20)
+                Slider(value: $tinyPile.pH,
+                       in:   3...8,
+                       step: 0.05
+                )
+                Spacer(minLength:20)
+            }
            
            
                        
             Spacer()
             Spacer()
-            Text("Phosphorus = \(tinyPile.phosphorus, specifier: "%.0f") ppm")
+            var plusPh: String {
+                if tinyPile.phosphorus == 100{
+                   return "+"
+               }
+               else{
+                   return ""
+            }
+            }
+            Text("Phosphorus = \(tinyPile.phosphorus, specifier: "%.0f")\(plusPh) ppm")
+            HStack{
+                Spacer(minLength:20)
             Slider(value: $tinyPile.phosphorus,
                    in:   0...100,
                    step: 1
             )
+                Spacer(minLength:20)
+            }
            
            
                        
             Spacer()
             Spacer()
-            Text("Potassium = \(tinyPile.potassium, specifier: "%.0f") ppm")
-            Slider(value: $tinyPile.potassium,
+            var plusP: String {
+                if tinyPile.potassium == 500{
+                   return "+"
+               }
+               else{
+                   return ""
+            }
+            }
+            Text("Potassium = \(tinyPile.potassium, specifier: "%.0f")\(plusP) ppm")
+                HStack{
+                    Spacer(minLength:20)
+                Slider(value: $tinyPile.potassium,
+                       in:   0...500,
+                       step: 10
+                )
+                    Spacer(minLength:20)
+                }
+           
+                       
+            Spacer()
+            Spacer()
+            
+            var plusM: String {
+                if tinyPile.magnesium == 800{
+                   return "+"
+               }
+               else{
+                   return ""
+            }
+            }
+            Text("Magnesium = \(tinyPile.magnesium, specifier: "%.0f")\(plusM) ppm")
+                    HStack{
+                        Spacer(minLength:20)
+            Slider(value: $tinyPile.magnesium,
                    in:   0...800,
                    step: 10
             )
-           
-           
-                       
-            Spacer()
-            Spacer()
-            Text("Magnesium = \(tinyPile.magnesium, specifier: "%.0f") ppm")
-            Slider(value: $tinyPile.magnesium,
-                   in:   0...1500,
-                   step: 10
-            )
-           
+                        Spacer(minLength:20)
+                    }
            
                        
             Spacer()
             Spacer()
-            Text("Calcium = \(tinyPile.calcium, specifier: "%.0f") ppm")
+            var plusC: String {
+                if tinyPile.calcium == 4000{
+                   return "+"
+               }
+               else{
+                   return ""
+            }
+            }
+            Text("Calcium = \(tinyPile.calcium, specifier: "%.0f")\(plusC) ppm")
+            HStack{
+              Spacer(minLength:20)
             Slider(value: $tinyPile.calcium,
-                   in:   0...5000,
+                   in:   0...4000,
                    step: 10
             )
-           
+                Spacer(minLength:20)
+            }
            
                        
             Spacer()
