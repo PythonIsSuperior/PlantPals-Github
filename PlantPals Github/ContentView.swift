@@ -617,13 +617,13 @@ func calculateCostAndText(pH: Double,
             
             
         }
-        else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Citrace
+        else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Sulfate
             // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (%.2f lbs/acre) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with %.0f lbs/acre Dolomite Lime.  Dolomite Lime is 19 percent Mg which gives %.0f lbs/acre Mg. Meet the remaining Mg need with %.2f lbs/acre Magnesium Citrace. Magnesium Citrace is 55 percent Mg which gives the remaining %.0f lbs/acre Mg.",magnesiumN,lime,lime*0.19, (magnesiumN-lime*0.19)/0.55,magnesiumN-lime*0.19))
+            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (%.2f lbs/acre) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with %.0f lbs/acre Dolomite Lime.  Dolomite Lime is 19 percent Mg which gives %.0f lbs/acre Mg. Meet the remaining Mg need with %.2f lbs/acre Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8 percent Mg which gives the remaining %.0f lbs/acre Mg.",magnesiumN,lime,lime*0.19, (magnesiumN-lime*0.19)/0.098,magnesiumN-lime*0.19))
             
             recommendationArray.append(String(format: "Add %.0f lbs/acre Dolomite Lime",lime*0.19))
             
-            recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Citrace",(magnesiumN-lime*0.19)/0.55))
+            recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Sulfate",(magnesiumN-lime*0.19)/0.098))
             
             CalciumExplain.append(String(format: "The Ca need is %.0f lbs/acre. From above, the %.0f lbs/acre Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre of Ca. ",calciumN, lime,  0.22 * magnesiumN/0.19))
             
@@ -631,7 +631,7 @@ func calculateCostAndText(pH: Double,
             magnesiumN = 0 // decrement magneium need
             
             // cost - add dolomite
-            // cost - add Magnesium Citrace
+            // cost - add Magnesium Sulfate
             
             
         }
@@ -642,13 +642,13 @@ func calculateCostAndText(pH: Double,
     // MARK: -Decision 2: Has Mg been met?
     if magnesiumN>0{       // Still have unmet Mg need
         // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-        explanationArray.append(String(format: "The Mg need is still %.2f lbs/acre, meet that with %.2f lbs/acre Magnesium Citrace, which is 55 percent Mg.",magnesiumN,magnesiumN/0.55))
+        explanationArray.append(String(format: "The Mg need is still %.2f lbs/acre, meet that with %.2f lbs/acre Magnesium Sulfate, which is 9.8 percent Mg.",magnesiumN,magnesiumN/0.098))
         
-        recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Citrace",magnesiumN/0.55))
+        recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Sulfate",magnesiumN/0.098))
         
         magnesiumN = 0 // decrement magneium need
         
-        // cost - add Magnesium Citrace
+        // cost - add Magnesium Sulfate
         
         
     }
