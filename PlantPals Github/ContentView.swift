@@ -28,7 +28,7 @@ class PileOfRubbish: ObservableObject {
     @Published var magnesiumNeed: Double = 100
     @Published var calcium: Double = 2000
     @Published var calciumNeed: Double = 2000
-   
+    @Published var area: Double = 1
    
    
     // ----CropType-----------------------
@@ -119,6 +119,9 @@ class PileOfRubbish: ObservableObject {
 //Call functions like this -----------------
 //Text("P2O5 \(ppmToLbs_P2O5_heavy_soil(ppm : 49))")
 //Text("K20 \(ppmToLbs_K2O_heavy_soil(ppm : 249))")
+func isStringNumer(string: String) -> Bool {
+    return Double(string) != nil
+}
 func ppmToLbs_P2O5_heavy_soil(ppm: Double) -> Double {
     let ppmData = [0.0,   12.5,  25.0,   35.0, 50.0, 60.0, 80.0]
     let lbsData = [890.0, 620.0, 360.0, 160.0, 0.0,  0.0 , 0.0]
@@ -367,12 +370,11 @@ struct SOIL_TEST: View {
 // FORM, LEAD = Anwar
 struct INSTRUCTION: View {
     @ObservedObject var tinyPile: PileOfRubbish
-   
-    @State private var numberOfTrees = 1
-    @State private var lengthOfRow = 1
-    @State private var sizeOfField = 1
-    @State private var isShowingHowItWorksPopup = false
-    @State private var isShowingSoilSamplePopup = false
+    @State var numberOfTrees: Int=5
+    @State var lengthOfRow:Double=5
+    @State var sizeOfField: Double=5
+    @State var isShowingHowItWorksPopup = false
+    @State var isShowingSoilSamplePopup = false
     var body: some View {
         NavigationView {
             Form {
@@ -383,41 +385,30 @@ struct INSTRUCTION: View {
                         Text("How the app works")
                     }
                     .alert(isPresented: $isShowingHowItWorksPopup) {
-                                            Alert(title: Text("How the app works"), message: Text("This is where you describe how the app works."), dismissButton: .default(Text("OK")))
-                                        }
+                        Alert(title: Text("How the app works"), message: Text("This is where you describe how the app works."), dismissButton: .default(Text("OK")))
+                    }
                     Button(action: {
                         isShowingSoilSamplePopup.toggle()
                     }) {
                         Text("Taking a soil sample")
                     }
                     .alert(isPresented: $isShowingSoilSamplePopup) {
-                                            Alert(title: Text("Taking a soil sample"), message: Text("Instructions for taking a soil sample go here."), dismissButton: .default(Text("OK")))
-                                        }
+                        Alert(title: Text("Taking a soil sample"), message: Text("Instructions for taking a soil sample go here."), dismissButton: .default(Text("OK")))
+                    }
                 }
                 Section(header: Text("Settings")) {
-                    Picker("For orchards, number of trees", selection: $numberOfTrees) {
-                        ForEach(1..<100) { number in
-                            Text("\(number)")
-                        }
-                    }
-//                        .pickerStyle(.wheel)
-                    Picker("For row crops, length of row (ft)", selection: $lengthOfRow) {
-                        ForEach(1..<50) { length in
-                            Text("\(length)")
-                        }
-                    }
-                    Picker("For field crops, size of field (acre)", selection: $sizeOfField) {
-                        ForEach(1..<50) { length in
-                            Text("\(length)")
-                        }
-                    }
-//                        .pickerStyle(.wheel)
+                    //TextField("Number of trees", text: $numberOfTrees)
+                    //.keyboardType(.decimalPad)
+                    //TextField("Length of row (ft)", text: $lengthOfRow.value)
+                    //.keyboardType(.decimalPad)
+                    //TextField("Size of field (acres)", text: $sizeOfField.value)
+                    //.keyboardType(.decimalPad)
                 }
             }
             .navigationTitle("App Settings")
         }
     }
-};
+}
 // Wheel Picker & VStack, LEAD = Gavin
 struct RESEARCH: View {
     @ObservedObject var tinyPile: PileOfRubbish
@@ -617,7 +608,7 @@ func calculateCostAndText(pH: Double,
             
             
         }
-        else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Sulfate
+        else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Sulphate
             // MARK: -Part 1a can't meet all Mg w/ Dolomite-
             explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (%.2f lbs/acre) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with %.0f lbs/acre Dolomite Lime.  Dolomite Lime is 19 percent Mg which gives %.0f lbs/acre Mg. Meet the remaining Mg need with %.2f lbs/acre Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8 percent Mg which gives the remaining %.0f lbs/acre Mg.",magnesiumN,lime,lime*0.19, (magnesiumN-lime*0.19)/0.098,magnesiumN-lime*0.19))
             
