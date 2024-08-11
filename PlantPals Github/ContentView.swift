@@ -29,7 +29,13 @@ class PileOfRubbish: ObservableObject {
     @Published var calcium: Double = 2000
     @Published var calciumNeed: Double = 2000
     @Published var area: Double = 1
-   
+
+    
+    @Published var numberOfTrees: Double = 5
+    @Published var lengthOfRow: Double = 125
+    @Published var sizeOfFieldAcres: Double = 0.004
+    @Published var whichOneLastEntered: String = "Tree"
+    @Published var areaInSquareFeet: Double = 250
    
     // ----CropType-----------------------
    
@@ -367,14 +373,20 @@ struct SOIL_TEST: View {
         }
     }
 };
+
+
 // FORM, LEAD = Anwar
 struct INSTRUCTION: View {
     @ObservedObject var tinyPile: PileOfRubbish
-    @State var numberOfTrees: Int=5
-    @State var lengthOfRow:Double=5
-    @State var sizeOfField: Double=5
-    @State var isShowingHowItWorksPopup = false
-    @State var isShowingSoilSamplePopup = false
+    
+    @State var numberOfTreesText: String = ""
+    @State var lengthOfRowText: String = ""
+    @State var sizeOfFieldAcresText: String = ""
+    @State var areaInSquareFeetText: String = ""
+    @State private var isShowingHowItWorksPopup = false
+    @State private var isShowingSoilSamplePopup = false
+    @State private var isKeyboardVisible = false
+    
     var body: some View {
         NavigationView {
             Form {
@@ -387,6 +399,7 @@ struct INSTRUCTION: View {
                     .alert(isPresented: $isShowingHowItWorksPopup) {
                         Alert(title: Text("How the app works"), message: Text("This is where you describe how the app works."), dismissButton: .default(Text("OK")))
                     }
+                    
                     Button(action: {
                         isShowingSoilSamplePopup.toggle()
                     }) {
@@ -396,19 +409,188 @@ struct INSTRUCTION: View {
                         Alert(title: Text("Taking a soil sample"), message: Text("Instructions for taking a soil sample go here."), dismissButton: .default(Text("OK")))
                     }
                 }
-                Section(header: Text("Settings")) {
-                    //TextField("Number of trees", text: $numberOfTrees)
-                    //.keyboardType(.decimalPad)
-                    //TextField("Length of row (ft)", text: $lengthOfRow.value)
-                    //.keyboardType(.decimalPad)
-                    //TextField("Size of field (acres)", text: $sizeOfField.value)
-                    //.keyboardType(.decimalPad)
+                Section(header: Text("Field Size (all are equivalent)")) {
+                    ZStack(alignment: .leading) {
+                        if numberOfTreesText.isEmpty {
+                            Text("\(tinyPile.numberOfTrees) trees (\(Int(tinyPile.areaInSquareFeet)) sq ft)")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 5)
+                        }
+                        TextField("", text: $numberOfTreesText, onCommit: handleInput)
+                            .keyboardType(.decimalPad)
+                            .onTapGesture {
+                                numberOfTreesText = ""
+                            }
+                    }
+                    
+                    ZStack(alignment: .leading) {
+                        if lengthOfRowText.isEmpty {
+                            Text("\(Int(tinyPile.areaInSquareFeet / 50 * 25)) foot row (\(Int(tinyPile.areaInSquareFeet)) sq ft)")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 5)
+                        }
+                        TextField("", text: $lengthOfRowText, onCommit: handleInput)
+                            .keyboardType(.decimalPad)
+                            .onTapGesture {
+                                lengthOfRowText = ""
+                            }
+                    }
+                    
+                    
+                    // Add a new row to show area in square feet
+                    ZStack(alignment: .leading) {
+                        if areaInSquareFeetText.isEmpty {
+                            Text("\(Int(tinyPile.areaInSquareFeet)) sq ft field (\(tinyPile.areaInSquareFeet / 43560) acres)")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 5)
+                        }
+                        TextField("", text: $areaInSquareFeetText, onCommit: handleInput)
+                            .keyboardType(.decimalPad)
+                            .onTapGesture {
+                                areaInSquareFeetText = ""
+                            }
+                    }
+                    ZStack(alignment: .leading) {
+                        if sizeOfFieldAcresText.isEmpty {
+                            Text("\(tinyPile.areaInSquareFeet / 43560) acres (\(Int(tinyPile.areaInSquareFeet)) sq ft)")
+                                .foregroundColor(.gray)
+                                .padding(.leading, 5)
+                        }
+                        TextField("", text: $sizeOfFieldAcresText, onCommit: handleInput)
+                            .keyboardType(.decimalPad)
+                            .onTapGesture {
+                                sizeOfFieldAcresText = ""
+                            }
+                    }
+                    
                 }
             }
             .navigationTitle("App Settings")
+            .onAppear(perform: updatePlaceholders)
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+                withAnimation(.easeInOut) {
+                    isKeyboardVisible = true
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+                withAnimation(.easeInOut) {
+                    isKeyboardVisible = false
+                }
+            }
+            .overlay(
+                Group {
+                    if isKeyboardVisible {
+                        Button("Done") {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            handleInput() // Ensure input is handled after dismissing the keyboard
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(5)
+                        .padding(.bottom, 10)
+                        .transition(.move(edge: .bottom))
+                    }
+                }, alignment: .bottom
+            )
         }
     }
+    
+    private func handleInput() {
+        print("handleInput() was called") // Check if this runs
+        
+        if let trees = Double(numberOfTreesText) {
+            tinyPile.numberOfTrees = trees
+            tinyPile.whichOneLastEntered = "tree"
+            tinyPile.areaInSquareFeet = trees * 50
+        } else if let row = Double(lengthOfRowText) {
+            tinyPile.lengthOfRow = row
+            tinyPile.whichOneLastEntered = "row"
+            tinyPile.areaInSquareFeet = (row / 25) * 50
+            
+            // Update the number of trees based on the new area
+            tinyPile.numberOfTrees = tinyPile.areaInSquareFeet / 50
+        } else if let acres = Double(sizeOfFieldAcresText) {
+            tinyPile.sizeOfFieldAcres = acres
+            tinyPile.whichOneLastEntered = "fieldAcre"
+            tinyPile.areaInSquareFeet = acres * 43560
+            tinyPile.numberOfTrees = tinyPile.areaInSquareFeet / 50
+        } else if let sqFt = Double(areaInSquareFeetText) {
+            tinyPile.areaInSquareFeet = sqFt
+            tinyPile.whichOneLastEntered = "sqft"
+            tinyPile.numberOfTrees = sqFt / 50
+            tinyPile.lengthOfRow = sqFt / 50 * 25
+            tinyPile.sizeOfFieldAcres = sqFt / 43560
+        } else {
+            clearInvalidInput()
+            return
+        }
+        
+        updatePlaceholders()
+        
+        // Print diagnostic info to the console
+        print("Diagnostic Info:")
+        print("Number of Trees: \(numberOfTreesText)")
+        print("Length of Row: \(lengthOfRowText)")
+        print("Size of Field (Acres): \(sizeOfFieldAcresText)")
+        print("Area in Square Feet: \(areaInSquareFeetText)")
+    }
+    
+    private func updatePlaceholders() {
+        let area = tinyPile.areaInSquareFeet
+        let acres = area / 43560
+        
+        // Format acres with appropriate decimal places
+        let acresText: String
+        
+        if acres > 10 {
+            acresText = String(format: "%.1f", acres)
+        } else if acres > 1 {
+            acresText = String(format: "%.2f", acres)
+        } else {
+            // For small values, ensure at least one non-zero digit
+            acresText = formatSmallAcres(acres)
+        }
+        
+        numberOfTreesText = "\(tinyPile.numberOfTrees) trees (\(Int(area)) sq ft)"
+        lengthOfRowText = "\(Int(area / 50 * 25)) foot row (\(Int(area)) sq ft)"
+        sizeOfFieldAcresText = "\(acresText) acres (\(Int(area)) sq ft)"
+        areaInSquareFeetText = "\(Int(area)) sq ft (\(acresText) acres)"
+    }
+
+    private func formatSmallAcres(_ acres: Double) -> String {
+        var decimalPlaces = 3
+        var factor: Double = 1.0
+        
+        // Check for very small values
+        while true {
+            let formattedAcres = String(format: "%.\(decimalPlaces)f", acres * factor)
+            // Check if the formatted string is not zero (e.g., not "0.00")
+            if formattedAcres != String(repeating: "0", count: 2) + String(repeating: "0", count: decimalPlaces - 1) + "." {
+                return formattedAcres
+            }
+            factor *= 10
+            decimalPlaces += 1
+            
+            // Safety check: If decimalPlaces get too high, break the loop
+            if decimalPlaces > 10 {
+                return String(format: "%.10f", acres)
+            }
+        }
+    }
+    
+    private func clearInvalidInput() {
+        numberOfTreesText = ""
+        lengthOfRowText = ""
+        sizeOfFieldAcresText = ""
+        areaInSquareFeetText = ""
+    }
 }
+
+
+
+
+
 // Wheel Picker & VStack, LEAD = Gavin
 struct RESEARCH: View {
     @ObservedObject var tinyPile: PileOfRubbish
@@ -489,42 +671,51 @@ struct CROP_INFO: View {
         }
     }
 };
+
 // FORM, LEAD = Rayaan
 struct COST_ALL: View {
     @ObservedObject var tinyPile: PileOfRubbish
     @State private var selectedIndex: Int?
    
     var body: some View {
-            Spacer()
-            List(tinyPile.cropData) { crop in
-                NavigationLink(destination: FERT_DETAILS(tinyPile : tinyPile, crop: crop)) {
-                    //all sorts of fertilizer math/logic here
-                   
-                    Text("\(crop.cropName) fertilizer cost = $\(crop.cropPH * 3, specifier: "%.2f")")
-                }
+        List(tinyPile.cropData) { crop in
+            NavigationLink(destination: FERT_DETAILS(tinyPile: tinyPile, crop: crop)) {
+                // Calculate the total cost using the calculateCostAndText function
+                let (totalCost, _, _) = calculateCostAndText(pH: tinyPile.pH,
+                                                             phNeed: crop.cropPH,
+                                                             phosphorus: tinyPile.phosphorus,
+                                                             potassium: tinyPile.potassium,
+                                                             magnesium: tinyPile.magnesium,
+                                                             tinyPile: tinyPile,
+                                                             soilType: "heavy",
+                                                             calcium: tinyPile.calcium)
+                
+                // Display the calculated total cost
+                Text("\(crop.cropName) fertilizer cost = $\(totalCost, specifier: "%.2f") for \(Int(tinyPile.areaInSquareFeet)) sq ft")
             }
-            .navigationTitle("Crops")
-            Spacer()
+        }
+        .navigationTitle("Crops")
     }
-};
+}
 
 
 func calculateCostAndText(pH: Double,
-                          phNeed: Double,// pH and onwards are values from the soil test
-                          phosphorus: Double, // ppm from test
-                          potassium: Double,  // ppm from test
-                          magnesium: Double,  // ppm from test
+                          phNeed: Double,
+                          phosphorus: Double,
+                          potassium: Double,
+                          magnesium: Double,
                           tinyPile: PileOfRubbish,
                           soilType: String,
-                          calcium: Double) -> (Double, [String], [String]) {  // returns cost & 2 arrays of strings
-    // Perform calculations based on the input values
-    @ObservedObject var tinyPile: PileOfRubbish
-    
+                          calcium: Double) -> (Double, [String], [String]) {
+
     var recommendationArray: [String] = []
     var explanationArray: [String] = []
-    var magnesiumExplain = "Magnesium Analysis: "
-    var CalciumExplain   =   "Calcium Analysis: "
-    var cost = 0
+    var cost = 27.0 // This is the placeholder cost for 1 acre
+
+    // Adjust the cost based on the area in square feet
+    if tinyPile.areaInSquareFeet > 0 {
+        cost *= (43560 / tinyPile.areaInSquareFeet)
+    }
     
     var nitrogen: Double{  // want 40 lbs/acre N
         if pH>phNeed{
@@ -595,7 +786,7 @@ func calculateCostAndText(pH: Double,
             recommendationArray.append(String(format: "Add %.0f lbs/acre Dolomite lime",magnesiumN/0.19))
             recommendationArray.append(String(format: "Add %.0f lbs/acre Calcium Carbonate lime",lime-magnesiumN/0.19))
             
-            CalciumExplain += String(format: "Calcium analysis: \nThe Ca need is %.0f lbs/acre. From above, the Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre. From above, the Calcium Carbonate lime added is 38 percent Ca, which gives %.0f lbs/acre Ca.",calciumN, 0.22 * magnesiumN/0.19,0.38 * (lime-magnesiumN/0.19))
+//            CalciumExplain += String(format: "Calcium analysis: \nThe Ca need is %.0f lbs/acre. From above, the Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre. From above, the Calcium Carbonate lime added is 38 percent Ca, which gives %.0f lbs/acre Ca.",calciumN, 0.22 * magnesiumN/0.19,0.38 * (lime-magnesiumN/0.19))
             
             // dolomite is 22% Ca. CaCO3 is 38% Calcium
             calciumN  -= (magnesiumN/0.19) * 0.22// decrement calcium for Dolomite
@@ -616,7 +807,7 @@ func calculateCostAndText(pH: Double,
             
             recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Sulfate",(magnesiumN-lime*0.19)/0.098))
             
-            CalciumExplain.append(String(format: "The Ca need is %.0f lbs/acre. From above, the %.0f lbs/acre Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre of Ca. ",calciumN, lime,  0.22 * magnesiumN/0.19))
+//            CalciumExplain.append(String(format: "The Ca need is %.0f lbs/acre. From above, the %.0f lbs/acre Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre of Ca. ",calciumN, lime,  0.22 * magnesiumN/0.19))
             
             calciumN  -= lime * 0.22// decrement calcium for Dolomite
             magnesiumN = 0 // decrement magneium need
