@@ -19,23 +19,18 @@ import SwiftUI
 class PileOfRubbish: ObservableObject {
    
     @Published var pH: Double = 6.0
-    @Published var phNeed: Double = 6.0
     @Published var phosphorus: Double = 50
-    @Published var phosphorusNeed: Double = 50
     @Published var potassium: Double = 50
-    @Published var potassiumNeed: Double = 50
     @Published var magnesium: Double = 100
-    @Published var magnesiumNeed: Double = 100
     @Published var calcium: Double = 2000
-    @Published var calciumNeed: Double = 2000
-    @Published var area: Double = 1
-
     
+    @Published var area: Double = 1
     @Published var numberOfTrees: Double = 5
     @Published var lengthOfRow: Double = 125
     @Published var sizeOfFieldAcres: Double = 0.004
     @Published var whichOneLastEntered: String = "Tree"
     @Published var areaInSquareFeet: Double = 250
+    
    
     // ----CropType-----------------------
    
@@ -699,7 +694,7 @@ struct COST_ALL: View {
 }
 
 
-func calculateCostAndText(pH: Double,
+func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
                           phNeed: Double,
                           phosphorus: Double,
                           potassium: Double,
@@ -710,16 +705,27 @@ func calculateCostAndText(pH: Double,
 
     var recommendationArray: [String] = []
     var explanationArray: [String] = []
-    var cost = 27.0 // This is the placeholder cost for 1 acre
-
-    // Adjust the cost based on the area in square feet
-    if tinyPile.areaInSquareFeet > 0 {
-        cost *= (43560 / tinyPile.areaInSquareFeet)
-    }
+    var totalCost = 0.0
+    var adj = 43560 / tinyPile.areaInSquareFeet  // multiply everything by areas adjustment
+    
+    // costs
+    var calcium_nitrate_cost:       Double = 55 / 50  // format for these is $55 for 50 lb bag
+    var urea_cost:                  Double = 59 / 50
+//    var rock_phosphate_cost:        Double = 50 / 50  // dont have cost for this one
+//    var single_superphosphate_cost: Double = 50 / 50  // dont have cost for this one
+    var magnesium_sulfate_cost:     Double = 59 / 50
+    var triple_superphosphate_cost: Double = 69 / 50
+    var sulfate_of_potash_cost:     Double = 70 / 50
+    var lime_regular_cost:          Double = 37 / 50
+    var lime_dolomite_cost:         Double = 30 / 50
+    var sulfur_cost:                Double = 20 / 4
+    var gypsum_cost:                Double = 40 / 50
+//    var k_mag_sul_po_mag_cost:      Double = 55 / 50
+//    var cal_mag_cost:               Double = 70 / 25
     
     var nitrogen: Double{  // want 40 lbs/acre N
         if pH>phNeed{
-            let n1=40/0.21  // ammonium sulfate is  21% N
+            let n1=40/0.46  // Urea is  46% N
             return n1
         }
         else{
@@ -727,17 +733,7 @@ func calculateCostAndText(pH: Double,
             return n1
         }
     }
-    
-    var nitrogenType: String{
-        if pH>phNeed{
-            let n1="ammonium sulfate"
-            return n1
-        }
-        else{
-            let n1="calcium nitrate"
-            return n1
-        }
-    }
+
     
     var magnesiumN: Double = 0.0
     if soilType=="heavy"{
@@ -757,10 +753,20 @@ func calculateCostAndText(pH: Double,
     let a2=(-4 * log((185 - 25*pH) / 64))
     let lime = (a1-a2) * 2000
     
-    // NPK and cost variables
+    // NPK
     let lbsP2O5 = ppmToLbs_P2O5_heavy_soil(ppm: phosphorus)
     let lbsK2O = ppmToLbs_K2O_heavy_soil(ppm: potassium)
-    let totalCost = 27.0
+    
+    var nitrogenType: String{
+        if pH>phNeed{
+            let n1="ammonium sulfate"
+            return n1
+        }
+        else{
+            let n1="calcium nitrate"
+            return n1
+        }
+    }
     
     
     // MARK: -Decision 0: checking pH
@@ -864,6 +870,8 @@ func calculateCostAndText(pH: Double,
     {
         recommendationArray.append(String(format: "Add %.0f lbs/acre K2O",lbsK2O))
     }
+
+    
 
     explanationArray.append("Total Cost will be calculated in the future: $\(String(format: "%.2f", totalCost))")
     return (totalCost, explanationArray, recommendationArray)
