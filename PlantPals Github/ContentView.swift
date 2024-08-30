@@ -684,9 +684,17 @@ struct COST_ALL: View {
                                                              tinyPile: tinyPile,
                                                              soilType: "heavy",
                                                              calcium: tinyPile.calcium)
-                
-                // Display the calculated total cost
-                Text("\(crop.cropName) fertilizer cost = $\(totalCost, specifier: "%.2f") for \(Int(tinyPile.areaInSquareFeet)) sq ft")
+                var cropArea:String = {
+                    // Display the calculated total cost
+                    if crop.cropType == .tree{
+                        return "\(Int(tinyPile.areaInSquareFeet/50)) trees (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+                    }else if crop.cropType == .row{
+                        return "\(tinyPile.areaInSquareFeet/50*25) foot row (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+                    }else{
+                        return "\(tinyPile.areaInSquareFeet/43560) acres (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+                    }
+                }()
+                Text("\(crop.cropName) fertilizer cost = $\(totalCost, specifier: "%.2f") for \(cropArea)")
             }
         }
         .navigationTitle("Crops")
@@ -706,7 +714,7 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
     var recommendationArray: [String] = []
     var explanationArray: [String] = []
     var totalCost = 0.0
-    var adj = 43560 / tinyPile.areaInSquareFeet  // multiply everything by areas adjustment
+    var adj = tinyPile.areaInSquareFeet/43560  // multiply everything by areas adjustment
     
     // costs
     var calcium_nitrate_cost:       Double = 55 / 50  // format for these is $55 for 50 lb bag
@@ -723,7 +731,7 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
 //    var k_mag_sul_po_mag_cost:      Double = 55 / 50
 //    var cal_mag_cost:               Double = 70 / 25
     
-    var nitrogen: Double{  // want 40 lbs/acre N
+    var nitrogen: Double{  // want 40 lbs N
         if pH>phNeed{
             let n1=40/0.46  // Urea is  46% N
             return n1
@@ -751,7 +759,7 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
     //lime variables
     let a1=(-4 * log((185 - 25*phNeed) / 64))
     let a2=(-4 * log((185 - 25*pH) / 64))
-    let lime = (a1-a2) * 2000
+    let lime = (a1-a2) * 2000*adj
     
     // NPK
     let lbsP2O5 = ppmToLbs_P2O5_heavy_soil(ppm: phosphorus)
@@ -777,8 +785,9 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
     }else if lime<0{       // <0 is raise pH -----------------------------------------
         // MARK: -Part 0 Add Sulphur
         let sulphur = (lime) * 0.32
-        explanationArray.append(String(format: "pH analysis: \nsoil test pH = %.2f, pH needed is %.2f. Total sulphur in quantity %.0f lbs/acre needed to lower the pH" ,pH,phNeed,sulphur))
-        recommendationArray.append(String(format: "Add %.0f lbs/acre elemental Sulphur",sulphur))
+        explanationArray.append(String(format: "pH analysis: \nsoil test pH = %.2f, pH needed is %.2f. Total sulphur in quantity %.0f lbs needed to lower the pH" ,pH,phNeed,sulphur))
+        recommendationArray.append(String(format: "Add %.0f lbs elemental Sulphur",sulphur))
+        totalCost+=sulfur_cost*sulphur
         
     }else { // this means lime>0 , need to raise pH -----------------------------------------
         
@@ -788,11 +797,11 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
         
         if (magnesiumN/0.19)<=lime{ // if (lime from meeting Mg need with dolomite) > lime need. We can meet entire Mg need without exceeding lime amount
             // MARK: -Part 1B meet all Mg w/ Dolomite-
-            explanationArray.append(String(format: "We can meet entire Mg need (%.2f lbs/acre) with Dolomite lime without exceeding total lime need. Add %.2f lbs/acre Dolomite Lime, which is 19 percent Mg & 22 percent Ca. Add %.2f lbs/acre Calcium Carbonate lime (38 percent Ca) to meet the rest of lime need.",magnesiumN,magnesiumN/0.19,lime-magnesiumN/0.19))
-            recommendationArray.append(String(format: "Add %.0f lbs/acre Dolomite lime",magnesiumN/0.19))
-            recommendationArray.append(String(format: "Add %.0f lbs/acre Calcium Carbonate lime",lime-magnesiumN/0.19))
+            explanationArray.append(String(format: "We can meet entire Mg need (%.2f lbs) with Dolomite lime without exceeding total lime need. Add %.2f lbs Dolomite Lime, which is 19 percent Mg & 22 percent Ca. Add %.2f lbs Calcium Carbonate lime (38 percent Ca) to meet the rest of lime need.",magnesiumN,magnesiumN/0.19,lime-magnesiumN/0.19))
+            recommendationArray.append(String(format: "Add %.0f lbs Dolomite lime",magnesiumN/0.19))
+            recommendationArray.append(String(format: "Add %.0f lbs Calcium Carbonate lime",lime-magnesiumN/0.19))
             
-//            CalciumExplain += String(format: "Calcium analysis: \nThe Ca need is %.0f lbs/acre. From above, the Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre. From above, the Calcium Carbonate lime added is 38 percent Ca, which gives %.0f lbs/acre Ca.",calciumN, 0.22 * magnesiumN/0.19,0.38 * (lime-magnesiumN/0.19))
+//            CalciumExplain += String(format: "Calcium analysis: \nThe Ca need is %.0f lbs. From above, the Dolomite lime added is 22 percent Ca, which gives %.0f lbs. From above, the Calcium Carbonate lime added is 38 percent Ca, which gives %.0f lbs Ca.",calciumN, 0.22 * magnesiumN/0.19,0.38 * (lime-magnesiumN/0.19))
             
             // dolomite is 22% Ca. CaCO3 is 38% Calcium
             calciumN  -= (magnesiumN/0.19) * 0.22// decrement calcium for Dolomite
@@ -801,26 +810,26 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
             
             // cost - add dolomite
             // cost - add Calcium carbonate
-            
+            totalCost+=(lime_dolomite_cost*(magnesiumN/0.19)+lime_regular_cost*(lime-magnesiumN/0.19))
             
             
         }
         else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Sulphate
             // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (%.2f lbs/acre) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with %.0f lbs/acre Dolomite Lime.  Dolomite Lime is 19 percent Mg which gives %.0f lbs/acre Mg. Meet the remaining Mg need with %.2f lbs/acre Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8 percent Mg which gives the remaining %.0f lbs/acre Mg.",magnesiumN,lime,lime*0.19, (magnesiumN-lime*0.19)/0.098,magnesiumN-lime*0.19))
+            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (%.2f lbs) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with %.0f lbs Dolomite Lime.  Dolomite Lime is 19 percent Mg which gives %.0f lbs Mg. Meet the remaining Mg need with %.2f lbs Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8 percent Mg which gives the remaining %.0f lbs Mg.",magnesiumN,lime,lime*0.19, (magnesiumN-lime*0.19)/0.098,magnesiumN-lime*0.19))
             
-            recommendationArray.append(String(format: "Add %.0f lbs/acre Dolomite Lime",lime*0.19))
+            recommendationArray.append(String(format: "Add %.0f lbs Dolomite Lime",lime*0.19))
             
-            recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Sulfate",(magnesiumN-lime*0.19)/0.098))
+            recommendationArray.append(String(format: "Add  %.0f lbs Magnesium Sulfate",(magnesiumN-lime*0.19)/0.098))
             
-//            CalciumExplain.append(String(format: "The Ca need is %.0f lbs/acre. From above, the %.0f lbs/acre Dolomite lime added is 22 percent Ca, which gives %.0f lbs/acre of Ca. ",calciumN, lime,  0.22 * magnesiumN/0.19))
+//            CalciumExplain.append(String(format: "The Ca need is %.0f lbs. From above, the %.0f lbs Dolomite lime added is 22 percent Ca, which gives %.0f lbs of Ca. ",calciumN, lime,  0.22 * magnesiumN/0.19))
             
             calciumN  -= lime * 0.22// decrement calcium for Dolomite
             magnesiumN = 0 // decrement magneium need
             
             // cost - add dolomite
             // cost - add Magnesium Sulfate
-            
+            totalCost+=(lime_dolomite_cost*(magnesiumN/0.19)+magnesium_sulfate_cost*((magnesiumN-lime*0.19)/0.098))
             
         }
     }
@@ -830,14 +839,14 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
     // MARK: -Decision 2: Has Mg been met?
     if magnesiumN>0{       // Still have unmet Mg need
         // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-        explanationArray.append(String(format: "The Mg need is still %.2f lbs/acre, meet that with %.2f lbs/acre Magnesium Sulfate, which is 9.8 percent Mg.",magnesiumN,magnesiumN/0.098))
+        explanationArray.append(String(format: "The Mg need is still %.2f lbs, meet that with %.2f lbs Magnesium Sulfate, which is 9.8 percent Mg.",magnesiumN,magnesiumN/0.098))
         
-        recommendationArray.append(String(format: "Add  %.0f lbs/acre Magnesium Sulfate",magnesiumN/0.098))
+        recommendationArray.append(String(format: "Add  %.0f lbs Magnesium Sulfate",magnesiumN/0.098))
         
         magnesiumN = 0 // decrement magneium need
         
         // cost - add Magnesium Sulfate
-        
+        totalCost+=magnesium_sulfate_cost*((magnesiumN-lime*0.19)/0.098)
         
     }
     
@@ -845,30 +854,34 @@ func calculateCostAndText(pH: Double,   // P K Mg Ca are in ppm
     // MARK: -Decision 3: Has Ca been met?
 
     if calciumN > 0 {
-        explanationArray.append(String(format: "Meet remaining Calcium need with %.0f lbs/acre Gypsum, which is 23 percent Calcium and does not affect pH",calciumN/0.23))
-        recommendationArray.append(String(format: "Add %.0f lbs/acre Gypsum",calciumN/0.23))
+        explanationArray.append(String(format: "Meet remaining Calcium need with %.0f lbs Gypsum, which is 23 percent Calcium and does not affect pH",calciumN/0.23))
+        recommendationArray.append(String(format: "Add %.0f lbs Gypsum",calciumN/0.23))
        
         // update Calcium explanation
         // cost - add gypsum
+        totalCost+=gypsum_cost*(calciumN/0.23)
     }
 
 
     
     
     // MARK: -Part 3 NPK-
-    explanationArray.append(String(format: "Nitrogen: %.0f lbs \(nitrogenType) per acre", nitrogen))
-    recommendationArray.append(String(format: "Add %.0f lbs/acre \(nitrogenType)",nitrogen))
+    explanationArray.append(String(format: "Nitrogen: %.0f lbs \(nitrogenType)", nitrogen))
+    recommendationArray.append(String(format: "Add %.0f lbs \(nitrogenType)",nitrogen))
+    totalCost+=urea_cost*nitrogen
 
-    explanationArray.append(String(format: "Phosphorus: %.0f lbs P2O5 per acre", lbsP2O5))
+    explanationArray.append(String(format: "Phosphorus: %.0f lbs P2O5", lbsP2O5))
     if lbsP2O5 > 0
     {
-        recommendationArray.append(String(format: "Add %.0f lbs P2O5 per acre",lbsP2O5))
+        recommendationArray.append(String(format: "Add %.0f lbs P2O5",lbsP2O5))
+        totalCost+=triple_superphosphate_cost*lbsP2O5
     }
 
-    explanationArray.append(String(format: "Potassium: %.0f lbs K2O per acre", lbsK2O))
+    explanationArray.append(String(format: "Potassium: %.0f lbs K2O", lbsK2O))
     if lbsK2O > 0
     {
-        recommendationArray.append(String(format: "Add %.0f lbs/acre K2O",lbsK2O))
+        recommendationArray.append(String(format: "Add %.0f lbs K2O",lbsK2O))
+        totalCost+=sulfate_of_potash_cost*lbsK2O
     }
 
     
@@ -889,9 +902,10 @@ struct FERT_DETAILS: View {
     let crop: PileOfRubbish.CropData
     var body: some View {
         var soilType="heavy"
+        var adj = 43560 / tinyPile.areaInSquareFeet
 
         // all vars must be declaired inside "body"
-        let (cost, textExplanation, textRecommendation) = calculateCostAndText(pH: tinyPile.pH, phNeed: crop.cropPH, phosphorus: tinyPile.phosphorus, potassium: tinyPile.potassium, magnesium: tinyPile.magnesium, tinyPile: tinyPile, soilType: soilType, calcium: tinyPile.calcium)
+        let (cost, textExplanation, textRecommendation) = calculateCostAndText(pH: tinyPile.pH, phNeed: crop.cropPH, phosphorus: tinyPile.phosphorus*adj, potassium: tinyPile.potassium*adj, magnesium: tinyPile.magnesium*adj, tinyPile: tinyPile, soilType: soilType, calcium: tinyPile.calcium*adj)
        
 
         Form {
