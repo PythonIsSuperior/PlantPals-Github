@@ -833,11 +833,16 @@ func calculateCostAndText(pH: Double,                                         //
         explanationArray.append(String(format: "pH does not need adjustment"))
         
     }else if lime<0{       // <0 is raise pH -----------------------------------------
-        // MARK: -Part 0 Add Sulphur
-        let sulphur = (-lime) * 0.32
-        explanationArray.append(String(format: "pH analysis: \nsoil test pH = %.2f, pH needed is %.2f. Total sulphur in quantity \(nice(sulphur*adj)) needed to lower the pH" ,pH,phNeed))
-        recommendationArray.append(String(format: "Add \(nice(sulphur*adj)) Elemental Sulphur ($%.2f)",adj*sulfur_cost*sulphur))
-        totalCost+=adj*sulfur_cost*sulphur
+        
+        let sulphur = -adj * lime * 0.32
+        let sulphurCost = sulfur_cost*sulphur
+        totalCost+=sulphurCost
+        let sulphurAmountString = nice(sulphur)
+        
+        explanationArray.append(String(format: "pH analysis: \nsoil test pH = %.2f, pH needed is %.2f. Total sulphur in quantity \(sulphurAmountString) needed to lower the pH" ,pH,phNeed))
+        recommendationArray.append(String(format: "Add \(sulphurAmountString) Elemental Sulphur ($%.2f)",sulphurCost))
+        
+        
         
     }else { // this means lime>0 , need to raise pH -----------------------------------------
         
@@ -847,39 +852,57 @@ func calculateCostAndText(pH: Double,                                         //
         
         if (magnesiumN/0.19)<=lime{ // if (lime from meeting Mg need with dolomite) > lime need. We can meet entire Mg need without exceeding lime amount
             // MARK: -Part 1B meet all Mg w/ Dolomite-
-            explanationArray.append(String(format: "We can meet entire Mg need (\(nice(adj*magnesiumN))) with Dolomite lime without exceeding total lime need. Add \(nice(adj*magnesiumN/0.19)) Dolomite Lime, which is 19%% Mg & 22%% Ca. Add \(nice(adj*(lime-magnesiumN/0.19)))) Calcium Carbonate lime (38%% Ca) to meet the rest of lime need."))
-            
-            recommendationArray.append(String(format: "Add \(nice(adj*magnesiumN/0.19)) Dolomite lime ($%.2f)", adj*lime_dolomite_cost*magnesiumN/0.19))
-            recommendationArray.append(String(format: "Add \(nice(adj*(lime-magnesiumN/0.19))) Calcium Carbonate lime ($%.2f)", adj*lime_regular_cost*(lime-magnesiumN/0.19)))
+            // Calculations pulled out for clarity
+            let dolomiteAmount = adj * magnesiumN / 0.19
+            let dolomiteCost = dolomiteAmount * lime_dolomite_cost
 
-                     // cost - add dolomite
-            // cost - add Calcium carbonate
-            totalCost+=adj*(lime_dolomite_cost*(magnesiumN/0.19)+lime_regular_cost*(lime-magnesiumN/0.19))
-            
-            // We added some Ca , but there might have to add more. Decrement the need
-            // dolomite is 22% Ca. CaCO3 is 38% Calcium
-            calciumN  -= (magnesiumN/0.19) * 0.22// decrement calcium for Dolomite
-            calciumN  -= (lime-magnesiumN/0.19) * 0.38// decrement calcium for Calcium Carbonate
-            magnesiumN = 0 // decrement magneium need
+            let calciumCarbonateAmount = adj * (lime - magnesiumN / 0.19)
+            let calciumCarbonateCost = lime_regular_cost * calciumCarbonateAmount
+
+            // Updating total cost
+            totalCost += dolomiteCost + calciumCarbonateCost
+
+            // String formatting
+            let dolomiteAmountString = nice(dolomiteAmount)
+            let calciumCarbonateAmountString = nice(calciumCarbonateAmount)
+
+            explanationArray.append(String(format: "We can meet entire Mg need (\(nice(adj*magnesiumN))) with Dolomite lime without exceeding total lime need. Add \(dolomiteAmountString) Dolomite Lime, which is 19%% Mg & 22%% Ca. Add \(calciumCarbonateAmountString) Calcium Carbonate lime (38%% Ca) to meet the rest of lime need."))
+
+            recommendationArray.append(String(format: "Add \(dolomiteAmountString) Dolomite lime ($%.2f)", dolomiteCost))
+            recommendationArray.append(String(format: "Add \(calciumCarbonateAmountString) Calcium Carbonate lime ($%.2f)", calciumCarbonateCost))
+
+            // Decrementing Calcium and Magnesium needs
+            calciumN -= dolomiteAmount * 0.22 // Dolomite is 22% Ca
+            calciumN -= calciumCarbonateAmount * 0.38 // Calcium Carbonate is 38% Ca
+            magnesiumN = 0 // Magnesium need met
             
         }
         else if lime>=0{       // Meeting entire Mg with dolomite would exceed lime need. Meet part with dolomite, part with Mg Sulphate
             // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (\(nice(adj*magnesiumN))) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with \(nice(adj*lime)) Dolomite Lime.  Dolomite Lime is 19%% Mg which gives \(nice(adj*lime*0.19)) Mg. Meet the remaining Mg need with \(nice(adj*((magnesiumN-lime*0.19)/0.098))) Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8%% Mg which gives the remaining \(nice(adj*(magnesiumN-lime*0.19))) Mg."))
-            
-            recommendationArray.append(String(format: "Add \(nice(adj*lime*0.19)) Dolomite Lime ($%.2f)", adj*lime_dolomite_cost*lime*0.19))
+            // Calculations pulled out for clarity
+            let dolomiteMgProvided = adj * lime * 0.19
+            let dolomiteMgCost = lime_dolomite_cost * dolomiteMgProvided
 
-            recommendationArray.append(String(format: "Add \(nice(adj*((magnesiumN-lime*0.19)/0.098))) Magnesium Sulfate ($%.2f)", adj*magnesium_sulfate_cost*((magnesiumN-lime*0.19)/0.098)))
+            let remainingMgNeed = adj * (magnesiumN - lime * 0.19) / 0.098
+            let magnesiumSulfateCost = magnesium_sulfate_cost * remainingMgNeed
 
-           
-            // cost - add dolomite
-            totalCost+=adj*(adj*lime_dolomite_cost*lime*0.19)
+            // Updating total cost
+            totalCost += dolomiteMgCost
+            totalCost += magnesiumSulfateCost
 
-            // cost - add Magnesium Sulfate
-            totalCost+=adj * (magnesium_sulfate_cost*( (magnesiumN-lime*0.19) / 0.098) )
-            
-            calciumN  -= lime * 0.22// decrement calcium for Dolomite
-            magnesiumN = 0 // decrement magnesium need
+            // String formatting
+            let dolomiteMgString = nice(dolomiteMgProvided)
+            let remainingMgString = nice(remainingMgNeed)
+
+            explanationArray.append(String(format: "Magnesium analysis: \nIf we met entire Mg need (\(remainingMgString)) with Dolomite lime, that would exceed the total lime needed to balance pH. Meet part of the Mg need and the entire pH need with \(dolomiteMgString) Dolomite Lime. Dolomite Lime is 19%% Mg which gives \(dolomiteMgString) Mg. Meet the remaining Mg need with \(remainingMgString) Magnesium Sulfate, which does not change pH. Magnesium Sulfate is 9.8%% Mg which gives the remaining \(remainingMgString) Mg."))
+
+            recommendationArray.append(String(format: "Add \(dolomiteMgString) Dolomite Lime ($%.2f)", dolomiteMgCost))
+            recommendationArray.append(String(format: "Add \(remainingMgString) Magnesium Sulfate ($%.2f)", magnesiumSulfateCost))
+
+            // Decrementing Magnesium needs
+            magnesiumN = 0 // Magnesium need met
+            calciumN -= lime * 0.22 // Dolomite is 22% Ca
+
             
         }
     }
@@ -889,14 +912,21 @@ func calculateCostAndText(pH: Double,                                         //
     // MARK: -Decision 2: Has Mg been met?
     if magnesiumN>0{       // Still have unmet Mg need
         // MARK: -Part 1a can't meet all Mg w/ Dolomite-
-        explanationArray.append(String(format: "The Mg need is still \(nice(adj*magnesiumN)), meet that with \(nice(adj*magnesiumN/0.098)) Magnesium Sulfate, which is 9.8%% Mg."))
-        
-        recommendationArray.append(String(format: "Add \(nice(adj*magnesiumN/0.098)) Magnesium Sulfate ($%.2f)", adj*magnesium_sulfate_cost*magnesiumN/0.098))
+        // Calculations pulled out for clarity
+        let magnesiumSulfateAmount = adj * magnesiumN / 0.098
+        let magnesiumSulfateCost = magnesium_sulfate_cost * magnesiumSulfateAmount
 
-        
-        // cost - add Magnesium Sulfate
-        totalCost+=adj * (magnesium_sulfate_cost*((magnesiumN-lime*0.19)/0.098))
-        
+        // Updating total cost
+        totalCost += magnesiumSulfateCost
+
+        // String formatting
+        let magnesiumSulfateAmountString = nice(magnesiumSulfateAmount)
+        let remainingMgNeedString = nice(adj * magnesiumN)
+
+        explanationArray.append(String(format: "The Mg need is still \(remainingMgNeedString), meet that with \(magnesiumSulfateAmountString) Magnesium Sulfate, which is 9.8%% Mg."))
+
+        recommendationArray.append(String(format: "Add \(magnesiumSulfateAmountString) Magnesium Sulfate ($%.2f)", magnesiumSulfateCost))
+
 
     }
     
@@ -904,12 +934,19 @@ func calculateCostAndText(pH: Double,                                         //
     // MARK: -Decision 3: Has Ca been met?
 
     if calciumN > 0 {
-        explanationArray.append(String(format: "Meet remaining Calcium need with \(nice(adj*calciumN/0.23)) Gypsum, which is 23%% Calcium and does not affect pH",calciumN/0.23))
-        recommendationArray.append(String(format: "Add \(nice(adj*calciumN/0.23)) Gypsum ($%.2f)", adj*gypsum_cost*calciumN/0.23))
+        // Calculations pulled out for clarity
+        let gypsumAmount = adj * calciumN / 0.23
+        let gypsumCost = gypsum_cost * gypsumAmount
 
-        // update Calcium explanation
-        // cost - add gypsum
-        totalCost+=adj * (gypsum_cost*(calciumN/0.23))
+        // Updating total cost
+        totalCost += gypsumCost
+
+        // String formatting
+        let gypsumAmountString = nice(gypsumAmount)
+
+        explanationArray.append(String(format: "Meet remaining Calcium need with \(gypsumAmountString) Gypsum, which is 23%% Calcium and does not affect pH."))
+        recommendationArray.append(String(format: "Add \(gypsumAmountString) Gypsum ($%.2f)", gypsumCost))
+
     }
 
     
@@ -919,16 +956,34 @@ func calculateCostAndText(pH: Double,                                         //
     
     // N
     if pH>phNeed{  // Urea is 46% N
-        explanationArray.append(String(format: "Nitrogen analysis: Urea is the best N fertilizer since we are lowering pH, and is 46%% N. Meet \(nice(adj*40)) nitrogen need with \(nice(nitrogen)) Urea. This equates to %.0f lbs/acre N",nitrogenLbsPerAcre ))
-        recommendationArray.append(String(format: "Add \(nice(nitrogen)) \(nitrogenType) (Urea $%.2f)", urea_cost*nitrogen)) // nitrogen already includes adj
-        totalCost+=urea_cost*nitrogen // nitrogen already includes adj
+        // Calculations pulled out for clarity
+        let nitrogenNeed = adj * 40 // want 40 lbs per acre
+        let nitrogenCost = urea_cost * nitrogen // nitrogen calculated at top, already includes adj
+        let nitrogenAmountString = nice(nitrogen)
+        let nitrogenNeedString = nice(nitrogenNeed)
+
+        // Updating total cost
+        totalCost += nitrogenCost
+
+        // String formatting
+        explanationArray.append(String(format: "Nitrogen analysis: Urea is the best N fertilizer since we are lowering pH, and is 46%% N. Meet \(nitrogenNeedString) nitrogen need with \(nitrogenAmountString) Urea. This equates to %.0f lbs/acre N", nitrogenLbsPerAcre))
+        recommendationArray.append(String(format: "Add \(nitrogenAmountString) \(nitrogenType) (Urea $%.2f)", nitrogenCost))
 
 
     }
     else{          // CaN is 15% N
-        explanationArray.append(String(format: "Nitrogen analysis: Calcium Nitrate is the best N fertilizer since we are lowering pH, and is 15%% N. Meet \(nice(adj*40)) nitrogen need with \(nice(nitrogen)) Calcium Nitrate. This equates to %.0f lbs/acre N",nitrogenLbsPerAcre ))
-        recommendationArray.append(String(format: "Add \(nice(nitrogen)) \(nitrogenType) (Calcium Nitrate $%.2f)", calcium_nitrate_cost*nitrogen)) // nitrogen already includes adj
-        totalCost+=calcium_nitrate_cost*nitrogen // nitrogen already includes adj
+        // Calculations pulled out for clarity
+        let nitrogenNeed = adj * 40
+        let nitrogenCost = calcium_nitrate_cost * nitrogen // nitrogen already includes adj
+        let nitrogenAmountString = nice(nitrogen)
+        let nitrogenNeedString = nice(nitrogenNeed)
+
+        // Updating total cost
+        totalCost += nitrogenCost
+
+        // String formatting
+        explanationArray.append(String(format: "Nitrogen analysis: Calcium Nitrate is the best N fertilizer since we are lowering pH, and is 15%% N. Meet \(nitrogenNeedString) nitrogen need with \(nitrogenAmountString) Calcium Nitrate. This equates to %.0f lbs/acre N", nitrogenLbsPerAcre))
+        recommendationArray.append(String(format: "Add \(nitrogenAmountString) \(nitrogenType) (Calcium Nitrate $%.2f)", nitrogenCost))
 
     }
 
@@ -936,10 +991,20 @@ func calculateCostAndText(pH: Double,                                         //
     // P
     if lbsP2O5 > 0
     {
-        explanationArray.append(String(format: "Phosphorus analysis: The phosphorus need is interpolated from table 7-3 of reference 1. For a soil test of \(phosphorus) ppm P and \(soilType) soil, add \(nice(adj*lbsP2O5)) Triple Superphosphate (P2O5). This equates to \(nice(lbsP2O5))/acre P2O5" ))
-        
-        recommendationArray.append(String(format: "Add \(nice(adj*lbsP2O5)) Triple Superphosphate (P2O5) ($%.2f)", adj*triple_superphosphate_cost*lbsP2O5))
-        totalCost+=adj*triple_superphosphate_cost*lbsP2O5  // lbsP2O5 is per acre
+        // Calculations pulled out for clarity
+        let phosphorusNeed = adj * lbsP2O5
+        let phosphorusCost = triple_superphosphate_cost * phosphorusNeed
+        let phosphorusNeedString = nice(phosphorusNeed)
+        let phosphorusAmountString = nice(lbsP2O5)
+
+        // Updating total cost
+        totalCost += phosphorusCost
+
+        // String formatting
+        explanationArray.append(String(format: "Phosphorus analysis: The phosphorus need is interpolated from table 7-3 of reference 1. For a soil test of \(phosphorus) ppm P and \(soilType) soil, add \(phosphorusNeedString) Triple Superphosphate (P2O5). This equates to \(phosphorusAmountString)/acre P2O5"))
+
+        recommendationArray.append(String(format: "Add \(phosphorusNeedString) Triple Superphosphate (P2O5) ($%.2f)", phosphorusCost))
+
     }
     else
     {
@@ -949,10 +1014,20 @@ func calculateCostAndText(pH: Double,                                         //
     // K
     if lbsK2O > 0
     {
-        explanationArray.append(String(format: "Potassium analysis: The potassium need is interpolated from table 7-3 of reference 1. For a soil test of \(potassium) ppm K and \(soilType) soil, add \(nice(adj*lbsK2O)) Sulfate of Potash (K20). This equates to \(nice(lbsK2O))/acre K2O"))
-        
-        recommendationArray.append(String(format: "Add \(nice(adj*lbsK2O)) Sulfate of Potash (K20) ($%.2f)", adj*sulfate_of_potash_cost*lbsK2O))
-        totalCost+=adj*sulfate_of_potash_cost*lbsK2O  // lbsK2O is per acre
+        // Calculations pulled out for clarity
+        let potassiumNeed = adj * lbsK2O
+        let potassiumCost = sulfate_of_potash_cost * potassiumNeed
+        let potassiumNeedString = nice(potassiumNeed)
+        let potassiumAmountString = nice(lbsK2O)
+
+        // Updating total cost
+        totalCost += potassiumCost
+
+        // String formatting
+        explanationArray.append(String(format: "Potassium analysis: The potassium need is interpolated from table 7-3 of reference 1. For a soil test of \(potassium) ppm K and \(soilType) soil, add \(potassiumNeedString) Sulfate of Potash (K20). This equates to \(potassiumAmountString)/acre K2O"))
+
+        recommendationArray.append(String(format: "Add \(potassiumNeedString) Sulfate of Potash (K20) ($%.2f)", potassiumCost))
+
     }
     else
     {
