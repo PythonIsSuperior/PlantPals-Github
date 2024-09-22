@@ -183,14 +183,18 @@ func ppmToLbs_K2O_heavy_soil(ppm: Double) -> Double {
 }
 
 func nice(_ my_lbs: Double) -> String {
+    var result: String
+    
     if abs(my_lbs) >= 100 {
-        return String(format: "%.0f lbs", my_lbs)
+        result = String(format: "%.0f lbs", my_lbs)
     } else if abs(my_lbs) >= 2 {
-        return String(format: "%.1f lbs", my_lbs)
+        result = String(format: "%.1f lbs", my_lbs)
     } else {
         let ounces = my_lbs * 16
-        return String(format: "%.1f oz", ounces)
+        result = String(format: "%.1f oz", ounces)
     }
+    
+    return result
 }
 
 
@@ -259,130 +263,105 @@ struct ContentView: View {
         }
     }
 };
-// VStack, LEAD = Andrew
+
 // VStack, LEAD = Andrew
 struct SOIL_TEST: View {
     @ObservedObject var tinyPile: PileOfRubbish
+
+    // Move computed properties outside the body
+    var plusPh: String {
+        return tinyPile.phosphorus == 100 ? "+" : ""
+    }
+    var plusP: String {
+        return tinyPile.potassium == 500 ? "+" : ""
+    }
+    var plusM: String {
+        return tinyPile.magnesium == 800 ? "+" : ""
+    }
+    var plusC: String {
+        return tinyPile.calcium == 4000 ? "+" : ""
+    }
+
     var body: some View {
         VStack {
             Text("Input Soil Test Results").bold()
             Spacer()
             Text("pH = \(tinyPile.pH, specifier: "%.2f")")
-            HStack{
-                Spacer(minLength:20)
+            HStack {
+                Spacer(minLength: 20)
                 Slider(value: $tinyPile.pH,
-                       in:   3...8,
+                       in: 3...8,
                        step: 0.05
                 )
-                Spacer(minLength:20)
+                Spacer(minLength: 20)
             }
-           
-           
-                       
+
             Spacer()
             Spacer()
-            var plusPh: String {
-                if tinyPile.phosphorus == 100{
-                   return "+"
-               }
-               else{
-                   return ""
-            }
-            }
+
             Text("Phosphorus = \(tinyPile.phosphorus, specifier: "%.0f")\(plusPh) ppm")
-            HStack{
-                Spacer(minLength:20)
-            Slider(value: $tinyPile.phosphorus,
-                   in:   0...100,
-                   step: 1
-            )
-                Spacer(minLength:20)
+            HStack {
+                Spacer(minLength: 20)
+                Slider(value: $tinyPile.phosphorus,
+                       in: 0...100,
+                       step: 1
+                )
+                Spacer(minLength: 20)
             }
-           
-           
-                       
+
             Spacer()
             Spacer()
-            var plusP: String {
-                if tinyPile.potassium == 500{
-                   return "+"
-               }
-               else{
-                   return ""
-            }
-            }
+
             Text("Potassium = \(tinyPile.potassium, specifier: "%.0f")\(plusP) ppm")
-                HStack{
-                    Spacer(minLength:20)
+            HStack {
+                Spacer(minLength: 20)
                 Slider(value: $tinyPile.potassium,
-                       in:   0...500,
+                       in: 0...500,
                        step: 10
                 )
-                    Spacer(minLength:20)
-                }
-           
-                       
+                Spacer(minLength: 20)
+            }
+
             Spacer()
             Spacer()
-            
-            var plusM: String {
-                if tinyPile.magnesium == 800{
-                   return "+"
-               }
-               else{
-                   return ""
-            }
-            }
+
             Text("Magnesium = \(tinyPile.magnesium, specifier: "%.0f")\(plusM) ppm")
-                    HStack{
-                        Spacer(minLength:20)
-            Slider(value: $tinyPile.magnesium,
-                   in:   0...800,
-                   step: 10
-            )
-                        Spacer(minLength:20)
-                    }
-           
-                       
+            HStack {
+                Spacer(minLength: 20)
+                Slider(value: $tinyPile.magnesium,
+                       in: 0...800,
+                       step: 10
+                )
+                Spacer(minLength: 20)
+            }
+
             Spacer()
             Spacer()
-            var plusC: String {
-                if tinyPile.calcium == 4000{
-                   return "+"
-               }
-               else{
-                   return ""
-            }
-            }
+
             Text("Calcium = \(tinyPile.calcium, specifier: "%.0f")\(plusC) ppm")
-            HStack{
-              Spacer(minLength:20)
-            Slider(value: $tinyPile.calcium,
-                   in:   0...4000,
-                   step: 10
-            )
-                Spacer(minLength:20)
+            HStack {
+                Spacer(minLength: 20)
+                Slider(value: $tinyPile.calcium,
+                       in: 0...4000,
+                       step: 10
+                )
+                Spacer(minLength: 20)
             }
-           
-                       
+
             Spacer()
-           
-            NavigationLink(destination: COST_ALL(tinyPile : tinyPile))
-            {
-               
+
+            NavigationLink(destination: COST_ALL(tinyPile: tinyPile)) {
                 Text("Calculate Report")
                     .padding()
                     .background(Color.blue)
                     .foregroundColor(.white)
-                   
-                   
             }
-//            .buttonStyle(ButtonStyle3D(background: Color.yellow))
-           
+
             Spacer()
         }
     }
-};
+}
+;
 
 
 // FORM, LEAD = Anwar
@@ -419,7 +398,7 @@ struct INSTRUCTION: View {
                         Alert(title: Text("Taking a soil sample"), message: Text("Instructions for taking a soil sample go here."), dismissButton: .default(Text("OK")))
                     }
                 }
-                Section(header: Text("Field Size (all are equivalent)")) {
+                Section(header: Text("Field Size (all will update when you change one)")) {
                     ZStack(alignment: .leading) {
                         if numberOfTreesText.isEmpty {
                             Text("\(tinyPile.numberOfTrees) trees (\(Int(tinyPile.areaInSquareFeet)) sq ft)")
@@ -568,26 +547,54 @@ struct INSTRUCTION: View {
         areaInSquareFeetText = "\(Int(area)) sq ft (\(acresText) acres)"
     }
 
+//    private func formatSmallAcres(_ acres: Double) -> String {
+//        var decimalPlaces = 3
+//        var factor: Double = 1.0
+//        
+//        // Check for very small values
+//        while true {
+//            let formattedAcres = String(format: "%.\(decimalPlaces)f", acres * factor)
+//            // Check if the formatted string is not zero (e.g., not "0.00")
+//            if formattedAcres != String(repeating: "0", count: 2) + String(repeating: "0", count: decimalPlaces - 1) + "." {
+//                return formattedAcres
+//            }
+//            factor *= 10
+//            decimalPlaces += 1
+//            
+//            // Safety check: If decimalPlaces get too high, break the loop
+//            if decimalPlaces > 10 {
+//                return String(format: "%.10f", acres)
+//            }
+//        }
+//        
+//        
+//    }
+    
     private func formatSmallAcres(_ acres: Double) -> String {
         var decimalPlaces = 3
         var factor: Double = 1.0
+        var stringToReturn: String
         
         // Check for very small values
-        while true {
+        while decimalPlaces <= 10 {
             let formattedAcres = String(format: "%.\(decimalPlaces)f", acres * factor)
-            // Check if the formatted string is not zero (e.g., not "0.00")
-            if formattedAcres != String(repeating: "0", count: 2) + String(repeating: "0", count: decimalPlaces - 1) + "." {
-                return formattedAcres
+            
+            // Check if the formatted string is not zero (e.g., not "0.000")
+            if formattedAcres != String(repeating: "0", count: decimalPlaces - 1) + "." + String(repeating: "0", count: decimalPlaces) {
+                stringToReturn = formattedAcres
+                return stringToReturn // Return value immediately once a valid formatted string is found
             }
+            
             factor *= 10
             decimalPlaces += 1
-            
-            // Safety check: If decimalPlaces get too high, break the loop
-            if decimalPlaces > 10 {
-                return String(format: "%.10f", acres)
-            }
         }
+        
+        // If we exit the loop without finding a valid format, return acres with 10 decimal places
+        stringToReturn = String(format: "%.10f", acres)
+        
+        return stringToReturn
     }
+
     
     private func clearInvalidInput() {
         numberOfTreesText = ""
@@ -604,15 +611,19 @@ struct INSTRUCTION: View {
 // Wheel Picker & VStack, LEAD = Gavin
 struct RESEARCH: View {
     @ObservedObject var tinyPile: PileOfRubbish
-   
+
     @State private var selectedCropType: PileOfRubbish.CropType = .row
     @State private var selectedCropIndex: Int = 0
-   
+
+    // Computed property moved outside the body
+    private var filteredCropData: [PileOfRubbish.CropData] {
+        return tinyPile.cropData.filter { $0.cropType == selectedCropType }
+    }
+
     var body: some View {
-     
         VStack {
             //----1st HStack------
-            HStack{
+            HStack {
                 Spacer()
                 Text("Research")
                     .font(.system(size: 60))
@@ -626,9 +637,8 @@ struct RESEARCH: View {
             Rectangle()
                 .size(width: 400, height: 10)
             //----2nd HStack------
-            HStack{
-                VStack
-                {
+            HStack {
+                VStack {
                     Text("Type of")
                     Text("crop")
                 }
@@ -636,21 +646,20 @@ struct RESEARCH: View {
                     ForEach(PileOfRubbish.CropType.allCases, id: \.self) { type in
                         Text(type.rawValue.capitalized).tag(type)
                     }
-                   
-                    .pickerStyle(WheelPickerStyle())
-                    .padding()
                 }
+                .pickerStyle(WheelPickerStyle())
+                .padding()
             }
             //---Picker-------
             // Second picker for crop name filtered by crop type
             Picker("Crop Name", selection: $selectedCropIndex) {
-                ForEach( filteredCropData.indices, id: \.self) { index in
+                ForEach(filteredCropData.indices, id: \.self) { index in
                     Text(filteredCropData[index].cropName).tag(index)
                 }
             }
             .pickerStyle(WheelPickerStyle())
             .padding()
-           
+
             //----------Display crop information----
             Text("Crop Name: \(filteredCropData[selectedCropIndex].cropName)")
             Text("Crop Type: \(filteredCropData[selectedCropIndex].cropType.rawValue.capitalized)")
@@ -660,14 +669,10 @@ struct RESEARCH: View {
             Spacer()
             Spacer()
             Spacer()
-           
         }
-       
     }
-    private var filteredCropData: [PileOfRubbish.CropData] {
-        return tinyPile.cropData.filter { $0.cropType == selectedCropType }
-    }
-};
+}
+;
    
 // VStack, LEAD = Gavin
 struct CROP_INFO: View {
@@ -682,62 +687,151 @@ struct CROP_INFO: View {
     }
 };
 
-// FORM, LEAD = Rayaan
+ //FORM, LEAD = Rayaan
+ //COST_ALL View with corrections
+// COST_ALL View with the requested modifications
 struct COST_ALL: View {
     @ObservedObject var tinyPile: PileOfRubbish
-    @State private var selectedIndex: Int?
-   
-    
-    
-    private func formatSmallAcres(_ acres: Double) -> String {
-        var decimalPlaces = 3
-        var factor: Double = 1.0
-        
-        // Check for very small values
-        while true {
-            let formattedAcres = String(format: "%.\(decimalPlaces)f", acres * factor)
-            // Check if the formatted string is not zero (e.g., not "0.00")
-            if formattedAcres != String(repeating: "0", count: 2) + String(repeating: "0", count: decimalPlaces - 1) + "." {
-                return formattedAcres
+
+    @State private var selectedSortOption: SortOption = .abc
+
+    enum SortOption: String, CaseIterable, Identifiable {
+        case abc = "ABC"
+        case cost = "Cost"
+        case type = "Type"
+
+        var id: String { self.rawValue }
+    }
+
+    struct CropCostData: Identifiable {
+        let id = UUID()
+        let crop: PileOfRubbish.CropData
+        let totalCost: Double
+    }
+
+    var cropCostData: [CropCostData] {
+        // Calculate the cost for each crop and store it along with the crop data
+        tinyPile.cropData.map { crop in
+            let (totalCost, _, _, _) = calculateCostAndText(
+                pH: tinyPile.pH,
+                phNeed: crop.cropPH,
+                phosphorus: tinyPile.phosphorus,
+                potassium: tinyPile.potassium,
+                magnesium: tinyPile.magnesium,
+                tinyPile: tinyPile,
+                soilType: "heavy",
+                calcium: tinyPile.calcium
+            )
+            return CropCostData(crop: crop, totalCost: totalCost)
+        }
+    }
+
+    var sortedCropCostData: [CropCostData] {
+        // Sort the data based on the selected sort option
+        switch selectedSortOption {
+        case .abc:
+            return cropCostData.sorted {
+                $0.crop.cropName.lowercased() < $1.crop.cropName.lowercased()
             }
-            factor *= 10
-            decimalPlaces += 1
-            
-            // Safety check: If decimalPlaces get too high, break the loop
-            if decimalPlaces > 10 {
-                return String(format: "%.10f", acres)
+        case .cost:
+            return cropCostData.sorted { $0.totalCost < $1.totalCost }
+        case .type:
+            return cropCostData.sorted {
+                $0.crop.cropType.rawValue.lowercased() < $1.crop.cropType.rawValue.lowercased()
             }
         }
     }
-    
+
+    var groupedByType: [PileOfRubbish.CropType: [CropCostData]] {
+        // Group the data by crop type
+        Dictionary(grouping: sortedCropCostData) { $0.crop.cropType }
+    }
+
     var body: some View {
-        List(tinyPile.cropData) { crop in
-            NavigationLink(destination: FERT_DETAILS(tinyPile: tinyPile, crop: crop)) {
-                // Calculate the total cost using the calculateCostAndText function
-                let (totalCost, _, _, _) = calculateCostAndText(pH: tinyPile.pH,                  // from soil test
-                                                             phNeed: crop.cropPH,
-                                                             phosphorus: tinyPile.phosphorus,  // from soil test
-                                                             potassium: tinyPile.potassium,    // from soil test
-                                                             magnesium: tinyPile.magnesium,    // from soil test
-                                                             tinyPile: tinyPile,
-                                                             soilType: "heavy",
-                                                             calcium: tinyPile.calcium)        // from soil test
-                let cropArea:String = {
-                    // Display the calculated total cost
-                    if crop.cropType == .tree{
-                        return "\(Int(tinyPile.areaInSquareFeet/50)) trees (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
-                    }else if crop.cropType == .row{
-                        return "\(tinyPile.areaInSquareFeet/50*25) foot row (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
-                    }else{
-                        return "\(formatSmallAcres(tinyPile.areaInSquareFeet/43560)) acres (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+        VStack {
+            Picker("Sort by", selection: $selectedSortOption) {
+                ForEach(SortOption.allCases) { option in
+                    Text(option.rawValue).tag(option)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            .padding()
+
+            if selectedSortOption == .type {
+                List {
+                    ForEach(PileOfRubbish.CropType.allCases, id: \.self) { type in
+                        if let crops = groupedByType[type] {
+                            Section(header: Text(type.rawValue.capitalized)) {
+                                ForEach(crops) { cropCost in
+                                    NavigationLink(destination: FERT_DETAILS(tinyPile: tinyPile, crop: cropCost.crop)) {
+                                        CropRowView(crop: cropCost.crop, tinyPile: tinyPile, totalCost: cropCost.totalCost)
+                                    }
+                                }
+                            }
+                        }
                     }
-                }()
-                Text("\(crop.cropName) fertilizer cost = $\(totalCost, specifier: "%.2f") for \(cropArea)")
+                }
+            } else {
+                List(sortedCropCostData) { cropCost in
+                    NavigationLink(destination: FERT_DETAILS(tinyPile: tinyPile, crop: cropCost.crop)) {
+                        CropRowView(crop: cropCost.crop, tinyPile: tinyPile, totalCost: cropCost.totalCost)
+                    }
+                }
             }
         }
         .navigationTitle("Crops")
     }
 }
+
+// Modified CropRowView to accept totalCost as a parameter
+struct CropRowView: View {
+    let crop: PileOfRubbish.CropData
+    @ObservedObject var tinyPile: PileOfRubbish
+    let totalCost: Double  // Receive totalCost from COST_ALL
+
+    var cropArea: String {
+        if crop.cropType == .tree {
+            return "\(Int(tinyPile.areaInSquareFeet / 50)) trees (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+        } else if crop.cropType == .row {
+            return "\(Int(tinyPile.areaInSquareFeet / 50 * 25)) foot row (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+        } else {
+            return "\(formatSmallAcres(tinyPile.areaInSquareFeet / 43560)) acres (\(Int(tinyPile.areaInSquareFeet)) sq ft)"
+        }
+    }
+
+    var body: some View {
+        Text("\(crop.cropName.capitalized) fertilizer cost = $\(totalCost, specifier: "%.2f") for \(cropArea)")
+    }
+
+    private func formatSmallAcres(_ acres: Double) -> String {
+        var decimalPlaces = 3
+        var factor: Double = 1.0
+        var stringToReturn: String
+
+        // Check for very small values
+        while decimalPlaces <= 10 {
+            let formattedAcres = String(format: "%.\(decimalPlaces)f", acres * factor)
+
+            // Check if the formatted string is not zero (e.g., not "0.000")
+            if formattedAcres != String(repeating: "0", count: decimalPlaces - 1) + "." + String(repeating: "0", count: decimalPlaces) {
+                stringToReturn = formattedAcres
+                return stringToReturn // Return value immediately once a valid formatted string is found
+            }
+
+            factor *= 10
+            decimalPlaces += 1
+        }
+
+        // If we exit the loop without finding a valid format, return acres with 10 decimal places
+        stringToReturn = String(format: "%.10f", acres)
+
+        return stringToReturn
+    }
+}
+
+
+
+
 
 // P K Mg Ca are in ppm
 // The function thinks in acres, and then converts to the desired sq ft
@@ -1052,43 +1146,46 @@ func calculateCostAndText(pH: Double,                                         //
 struct FERT_DETAILS: View {
     @ObservedObject var tinyPile: PileOfRubbish
     let crop: PileOfRubbish.CropData
-    var body: some View {
-        let soilType="heavy"
 
-        // all vars must be declaired inside "body"
-        let (_, textExplanation, textRecommendation, diagnosticInfo) = calculateCostAndText(pH: tinyPile.pH,                 // from soil test
-                                                                            phNeed: crop.cropPH,
-                                                                            phosphorus: tinyPile.phosphorus, // from soil test
-                                                                            potassium: tinyPile.potassium,   // from soil test
-                                                                            magnesium: tinyPile.magnesium,   // from soil test
-                                                                            tinyPile: tinyPile,
-                                                                            soilType: soilType, 
-                                                                            calcium: tinyPile.calcium)       // from soil test
-       
+    let soilType = "heavy"
+
+    // Move the calculation outside the body
+    var calculationResult: (Double, [String], [String], [String]) {
+        calculateCostAndText(
+            pH: tinyPile.pH,
+            phNeed: crop.cropPH,
+            phosphorus: tinyPile.phosphorus,
+            potassium: tinyPile.potassium,
+            magnesium: tinyPile.magnesium,
+            tinyPile: tinyPile,
+            soilType: soilType,
+            calcium: tinyPile.calcium)
+    }
+
+    var body: some View {
+        let (_, textExplanation, textRecommendation, diagnosticInfo) = calculationResult
 
         Form {
-                     
             Section(header: Text("Fertilizer recommendation for \(crop.cropName)")) {
-                List(textRecommendation, id: \.self) { line in
+                ForEach(textRecommendation, id: \.self) { line in
                     Text(line)
                 }
             }
             Section(header: Text("Detailed analysis for \(crop.cropName)")) {
-                List(textExplanation, id: \.self) { line in
+                ForEach(textExplanation, id: \.self) { line in
                     Text(line)
                 }
             }
             Section(header: Text("Diagnostic info for \(crop.cropName)")) {
-                List(diagnosticInfo, id: \.self) { line in
+                ForEach(diagnosticInfo, id: \.self) { line in
                     Text(line)
                 }
             }
         }
         .navigationTitle("\(crop.cropName)")
-
-
     }
-};
+}
+;
 
 #Preview {
     ContentView()
